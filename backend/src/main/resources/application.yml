@@ -5,19 +5,22 @@ spring:
     deserialization:
       accept-float-as-int: false
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/devdb}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    url: jdbc:postgresql://localhost:5432/devdb
+    username: rodrigo
+    password: SUA_SENHA
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
   flyway:
     locations: classpath:db/migration
+
 server:
-  port: ${PORT:8080}
+  port: 8080
+
 catalog:
-  cors-origins: ${CORS_ORIGINS:http://localhost:5173}
+  cors-origins: http://localhost:5173
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
