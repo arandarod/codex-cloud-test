@@ -5,9 +5,9 @@ spring:
     deserialization:
       accept-float-as-int: false
   datasource:
-    url: jdbc:postgresql://localhost:5432/devdb
-    username: ENC(qdw1ULpoTSzWRuFcNFekJD25NksedEymQx2ZoARgeNWqna33wYAF42W7+I1AveE6)
-    password: ENC(6cGhwm9ADPO5T25Z/M34Q3iKBkxu7p21PkOuJPkO131Imy9mn2iHJtsqHVa3S0oP)
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/devdb}
+    username: ${DB_USER:ENC(qdw1ULpoTSzWRuFcNFekJD25NksedEymQx2ZoARgeNWqna33wYAF42W7+I1AveE6)}
+    password: ${DB_PASSWORD:ENC(6cGhwm9ADPO5T25Z/M34Q3iKBkxu7p21PkOuJPkO131Imy9mn2iHJtsqHVa3S0oP)}
   jpa:
     open-in-view: false
     hibernate:

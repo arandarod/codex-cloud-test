@@ -42,7 +42,9 @@ class EncryptedPropertiesTest {
 
     @Test
     void missingMasterCannotDecryptCiphertext() {
-        context.withPropertyValues("example.secret=" + JasyptTestCipher.encrypt("fictitious-value", UUID.randomUUID().toString()))
+        context.withInitializer(app -> app.getEnvironment().getPropertySources().replace("systemEnvironment",
+                        new SystemEnvironmentPropertySource("systemEnvironment", Map.of())))
+                .withPropertyValues("example.secret=" + JasyptTestCipher.encrypt("fictitious-value", UUID.randomUUID().toString()))
                 .run(app -> assertThatThrownBy(() -> app.getEnvironment().getProperty("example.secret"))
                         .isInstanceOf(IllegalStateException.class)
                         .hasMessageContaining("jasypt.encryptor.password"));

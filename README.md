@@ -59,8 +59,8 @@ As versões exatas das dependências Java transitivas são determinadas pelo POM
 
 - JDK **25**, com `JAVA_HOME` apontando para ele.
 - Node.js 24 LTS e npm. O mínimo suportado pelo frontend é Node 22.12.
-- Docker com Compose v2 para o banco local e Docker disponível para os testes Testcontainers.
-- Alternativamente, uma instalação PostgreSQL existente para executar a aplicação; os testes de integração continuam exigindo Docker.
+- Docker com Compose v2 ou Podman com API compatível com Docker para o banco local e os testes Testcontainers.
+- Alternativamente, uma instalação PostgreSQL existente para executar a aplicação; os testes de integração continuam exigindo um runtime compatível com a API Docker.
 
 O Maven Wrapper dispensa instalar Maven globalmente. Seus downloads verificam checksum. No Windows, use `mvnw.cmd` e configure as variáveis no shell correspondente.
 
@@ -78,6 +78,7 @@ Edite `.env` e substitua os exemplos de `DB_USER` e `DB_PASSWORD` por valores lo
 | --- | --- | --- |
 | `DB_USER` | Usuário PostgreSQL; obrigatório | Nenhum |
 | `DB_PASSWORD` | Senha PostgreSQL; obrigatória | Nenhum |
+| `DB_PORT` | Porta local publicada pelo Compose | `5432` |
 | `DB_URL` | JDBC do backend | Endereço definido em `application.yml`; `.env.example` usa `localhost:5432/devdb` |
 | `SPRING_PROFILES_ACTIVE` | `demo` inclui 18 livros fictícios | Sem dados demo |
 | `CORS_ORIGINS` | Origins permitidas, separadas por vírgula | `http://localhost:5173` |
@@ -89,7 +90,9 @@ Edite `.env` e substitua os exemplos de `DB_USER` e `DB_PASSWORD` por valores lo
 docker compose up -d --wait
 ```
 
-O banco fica em `localhost:5432`, database `devdb`, com volume persistente e porta publicada apenas no loopback. `docker compose down` preserva os dados. As variáveis do Compose criam o usuário/senha **na primeira inicialização**; alterar `.env` depois não altera credenciais de um volume existente.
+Com Podman rootless no Linux, use `systemctl --user enable --now podman.socket` e execute `DOCKER_HOST=unix://${XDG_RUNTIME_DIR}/podman/podman.sock docker compose up -d --wait`.
+
+O banco fica em `localhost:${DB_PORT:-5432}`, database `devdb`, com volume persistente e porta publicada apenas no loopback. Se a porta 5432 já estiver ocupada, defina `DB_PORT=5433` e `DB_URL=jdbc:postgresql://localhost:5433/devdb` em `.env`. `docker compose down` preserva os dados. As variáveis do Compose criam o usuário/senha **na primeira inicialização**; alterar `.env` depois não altera credenciais de um volume existente.
 
 Flyway aplica `V1__create_books.sql`; Hibernate apenas valida o schema (`ddl-auto=validate`). O perfil `demo` acrescenta `V2__demo_books.sql`, uma única vez. Mantenha esse perfil para um banco já inicializado com demo; para executar sem dados fictícios, use outro banco/schema vazio. Desligar o perfil no mesmo schema deixa a migration demo fora das localizações de validação.
 
@@ -97,7 +100,7 @@ Se PostgreSQL já estiver instalado, crie `devdb`, forneça um usuário com perm
 
 ## Propriedades criptografadas com Jasypt
 
-O starter habilita a leitura automática de `ENC(...)` no Spring, inclusive nas propriedades do datasource. O endereço do banco informado no repositório foi preservado como padrão de `DB_URL`; usuário e senha em texto puro foram substituídos por `${DB_USER}` e `${DB_PASSWORD}`, sem fallback com credenciais.
+O starter habilita a leitura automática de `ENC(...)` no Spring, inclusive nas propriedades do datasource. `DB_URL`, `DB_USER` e `DB_PASSWORD` configuram o banco local. Sem essas variáveis, o backend usa a URL padrão e os valores criptografados já presentes em `application.yml`; nesse caso, é necessária a chave mestre correspondente.
 
 Use o seu [jasypt-tool](https://github.com/arandarod/jasypt-tool) para gerar os valores. O backend usa os mesmos parâmetros do tool no commit `0cb1662`:
 
@@ -184,6 +187,8 @@ Backend, a partir de `backend/`:
 ```
 
 Testcontainers cria um PostgreSQL isolado e o remove ao terminar. Os testes não usam `devdb`, `.env` nem H2. Cobrem CRUD persistido, not found, conflitos de ISBN, validação, JSON inválido, busca sem distinção de maiúsculas, escape de `%`, combinação de filtros, paginação, ordenação estável, parâmetros inválidos, CORS e OpenAPI. Os testes Jasypt verificam descriptografia, chaves ausentes/incorretas, configuração sem criptografia, compatibilidade com um valor fictício gerado pelo seu tool e conexão/migrations com URL, usuário e senha criptografados em PostgreSQL real. Mockito isola apenas regras em que não gravar dados importa.
+
+Para usar Podman rootless nos testes no Linux, inicie `systemctl --user enable --now podman.socket` e exporte `DOCKER_HOST=unix://${XDG_RUNTIME_DIR}/podman/podman.sock` e `TESTCONTAINERS_RYUK_DISABLED=true` antes do Maven. O IntelliJ Flatpak também precisa de acesso a esse socket nas permissões do aplicativo.
 
 Frontend, a partir de `frontend/`:
 
