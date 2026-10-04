@@ -38,6 +38,7 @@ Versões estáveis consultadas nos registries oficiais durante a implementação
 | Spring Boot / Spring Framework | 4.1.1 / 7, gerenciado pelo Boot |
 | Maven / Maven Wrapper | 3.10.0 / 3.3.4 |
 | Lombok | 1.18.48 (somente compilação) |
+| Jasypt Spring Boot / Jasypt | 4.0.4 / 1.9.3 |
 | PostgreSQL | 18.3 |
 | Flyway / Hibernate / JUnit / Mockito / AssertJ | Gerenciados pelo BOM Spring Boot 4.1.1 |
 | springdoc OpenAPI | 3.1.1 |
@@ -77,11 +78,12 @@ Edite `.env` e substitua os exemplos de `DB_USER` e `DB_PASSWORD` por valores lo
 | --- | --- | --- |
 | `DB_USER` | Usuário PostgreSQL; obrigatório | Nenhum |
 | `DB_PASSWORD` | Senha PostgreSQL; obrigatória | Nenhum |
-| `DB_URL` | JDBC do backend | `jdbc:postgresql://localhost:5432/devdb` |
+| `DB_URL` | JDBC do backend | Endereço definido em `application.yml`; `.env.example` usa `localhost:5432/devdb` |
 | `SPRING_PROFILES_ACTIVE` | `demo` inclui 18 livros fictícios | Sem dados demo |
 | `CORS_ORIGINS` | Origins permitidas, separadas por vírgula | `http://localhost:5173` |
 | `PORT` | Porta do backend | `8080` |
 | `VITE_API_BASE_URL` | Origin da API no frontend, sem `/api` | Vazio: usa `/api` e o proxy Vite |
+| `JASYPT_ENCRYPTOR_PASSWORD` | Chave mestre para descriptografar `ENC(...)` no backend | Nenhum; necessária somente com valores criptografados |
 
 ```bash
 docker compose up -d --wait
@@ -92,6 +94,50 @@ O banco fica em `localhost:5432`, database `devdb`, com volume persistente e por
 Flyway aplica `V1__create_books.sql`; Hibernate apenas valida o schema (`ddl-auto=validate`). O perfil `demo` acrescenta `V2__demo_books.sql`, uma única vez. Mantenha esse perfil para um banco já inicializado com demo; para executar sem dados fictícios, use outro banco/schema vazio. Desligar o perfil no mesmo schema deixa a migration demo fora das localizações de validação.
 
 Se PostgreSQL já estiver instalado, crie `devdb`, forneça um usuário com permissão de criar tabelas/migrations e configure as mesmas variáveis. Não é necessário iniciar o Compose nesse caso.
+
+## Propriedades criptografadas com Jasypt
+
+O starter habilita a leitura automática de `ENC(...)` no Spring, inclusive nas propriedades do datasource. O endereço do banco informado no repositório foi preservado como padrão de `DB_URL`; usuário e senha em texto puro foram substituídos por `${DB_USER}` e `${DB_PASSWORD}`, sem fallback com credenciais.
+
+Use o seu [jasypt-tool](https://github.com/arandarod/jasypt-tool) para gerar os valores. O backend usa os mesmos parâmetros do tool no commit `0cb1662`:
+
+| Parâmetro | Valor |
+| --- | --- |
+| Algoritmo | `PBEWITHHMACSHA512ANDAES_256` |
+| Iterações | `1000` |
+| Salt / IV | `RandomSaltGenerator` / `RandomIvGenerator` |
+| Saída | `base64`, com delimitador `ENC(...)` |
+
+**Antes de usar uma chave real no tool**, remova a linha que imprime `"password: " + password`. Ela expõe a chave mestre no terminal. Prefira o modo interativo, pois passar um valor secreto em `-Dexec.args` o coloca no histórico/argumentos do processo.
+
+Em Bash, solicite a chave sem gravá-la no histórico (use a mesma chave para gerar os valores e iniciar o backend):
+
+```bash
+read -rsp "Chave mestre Jasypt: " JASYPT_ENCRYPTOR_PASSWORD
+printf '\n'
+export JASYPT_ENCRYPTOR_PASSWORD
+```
+
+No diretório do seu tool:
+
+```bash
+mvn -q compile exec:java
+```
+
+No prompt do tool, use `enc` seguido do valor que deseja criptografar e depois `exit`. Configure a saída completa `ENC(...)` em `DB_USER`, `DB_PASSWORD` ou diretamente nas propriedades Spring correspondentes. Mantenha a chave mestre fora de `application.yml` e do Git. Carregue `.env` **antes** de solicitar/exportar a chave; uma atribuição vazia nesse arquivo sobrescreve a variável.
+
+**Com Docker Compose**, `DB_USER` e `DB_PASSWORD` inicializam o servidor PostgreSQL e precisam conter os valores originais, no `.env` ignorado pelo Git. Para criptografar apenas a configuração recebida pelo backend, use os overrides padrão do Spring:
+
+```bash
+export SPRING_DATASOURCE_USERNAME='ENC(resultado_gerado_pelo_tool)'
+export SPRING_DATASOURCE_PASSWORD='ENC(resultado_gerado_pelo_tool)'
+```
+
+Os exemplos acima são placeholders; substitua pelos resultados reais. O Compose não descriptografa `ENC(...)`. Para PostgreSQL já existente, sem Compose, você também pode fornecer `DB_USER`/`DB_PASSWORD` diretamente criptografados. Valores em texto puro continuam funcionando sem chave mestre, como nos testes existentes e na configuração demo local.
+
+Valores criptografados exigem a chave correta; uma chave ausente ou incorreta impede a resolução da configuração. Se alterar algoritmo ou iterações, atualize tool e backend juntos e gere novamente os valores. Não envie a chave mestre em chat nem a inclua em opções `-D` do processo.
+
+Se uma senha foi publicada anteriormente em texto puro, removê-la do arquivo atual não a remove do histórico Git. Troque essa senha; esta alteração não reescreve o histórico.
 
 ## Executar localmente
 
@@ -137,7 +183,7 @@ Backend, a partir de `backend/`:
 ./mvnw verify
 ```
 
-Testcontainers cria um PostgreSQL isolado e o remove ao terminar. Os testes não usam `devdb`, `.env` nem H2. Cobrem CRUD persistido, not found, conflitos de ISBN, validação, JSON inválido, busca sem distinção de maiúsculas, escape de `%`, combinação de filtros, paginação, ordenação estável, parâmetros inválidos, CORS e OpenAPI. Mockito isola apenas regras em que não gravar dados importa.
+Testcontainers cria um PostgreSQL isolado e o remove ao terminar. Os testes não usam `devdb`, `.env` nem H2. Cobrem CRUD persistido, not found, conflitos de ISBN, validação, JSON inválido, busca sem distinção de maiúsculas, escape de `%`, combinação de filtros, paginação, ordenação estável, parâmetros inválidos, CORS e OpenAPI. Os testes Jasypt verificam descriptografia, chaves ausentes/incorretas, configuração sem criptografia, compatibilidade com um valor fictício gerado pelo seu tool e conexão/migrations com URL, usuário e senha criptografados em PostgreSQL real. Mockito isola apenas regras em que não gravar dados importa.
 
 Frontend, a partir de `frontend/`:
 
@@ -159,7 +205,7 @@ npm run test:e2e
 
 Os testes de navegador esperam os 18 livros demo originais. Exercitam buscas, filtro, ordenação, paginação, formulário inválido, criação, edição, exclusão confirmada/cancelada, responsividade e falhas. Criam e removem um registro fictício. Não execute E2E sobre uma coleção pessoal que queira preservar. `test-results/` recebe screenshots desktop, mobile, formulário inválido e detalhes; o relatório fica em `playwright-report/`, ambos ignorados pelo Git. No cloud foi usado Chromium já instalado, com `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`.
 
-Validação realizada: **21 testes backend, 22 testes frontend e 2 testes Chromium passaram**, sem falhas ou testes ignorados. Build backend/frontend e lint passaram. Requisições reais diretamente à API e pelo proxy Vite retornaram os livros PostgreSQL. Springdoc informa nos logs que os endpoints de documentação estão habilitados; isso é intencional nesta POC.
+Validação inicial: **21 testes backend, 22 testes frontend e 2 testes Chromium passaram**, sem falhas ou testes ignorados. Após integrar Jasypt, **29 testes backend passaram**, incluindo criptografia, compatibilidade com o tool e banco. A suíte completa foi executada novamente, sem falhas ou testes ignorados. Build backend/frontend e lint passaram na validação da aplicação. Requisições reais diretamente à API e pelo proxy Vite retornaram os livros PostgreSQL. Springdoc informa nos logs que os endpoints de documentação estão habilitados; isso é intencional nesta POC.
 
 ## API
 
