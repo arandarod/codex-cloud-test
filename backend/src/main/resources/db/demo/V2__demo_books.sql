@@ -1,0 +1,20 @@
+-- Fictitious catalog for the explicit demo profile only.
+INSERT INTO books (title, author, isbn, publication_year, genre, available) VALUES
+('O mapa dos dias', 'Clara Vale', '9780000000019', 2024, 'FICTION', true),
+('As cidades de papel', 'Tomás Lira', '9780000000026', 2021, 'FICTION', true),
+('Um verão em Aurora', 'Marina Sol', '9780000000033', 2023, 'FICTION', true),
+('O jardim das estrelas', 'Elisa Monte', '9780000000040', 2025, 'FANTASY', false),
+('A última ilha', 'Rafael Brisa', '9780000000057', 2022, 'FANTASY', true),
+('Cartas para a lua', 'Clara Vale', '9780000000064', 2020, 'POETRY', true),
+('Entre marés', 'Lia Campos', '9780000000071', 2024, 'POETRY', true),
+('Pequenos infinitos', 'Davi Flor', '9780000000088', 2022, 'POETRY', false),
+('A forma do universo', 'Nina Prado', '9780000000095', 2025, 'SCIENCE', true),
+('Tempo de descobrir', 'Otávio Luz', '9780000000101', 2021, 'SCIENCE', true),
+('Além do horizonte', 'Nina Prado', '9780000000118', 2023, 'SCIENCE', true),
+('Memórias de uma cidade', 'Pedro Serra', '9780000000125', 2019, 'HISTORY', false),
+('Caminhos antigos', 'Alice Rio', '9780000000132', 2022, 'HISTORY', true),
+('O relógio de areia', 'Pedro Serra', '9780000000149', 2024, 'HISTORY', true),
+('Código com calma', 'Lucas Porto', '9780000000156', 2025, 'TECHNOLOGY', true),
+('Ideias em movimento', 'Bia Nunes', '9780000000163', 2023, 'TECHNOLOGY', false),
+('A máquina de histórias', 'Lucas Porto', '9780000000170', 2024, 'TECHNOLOGY', true),
+('O bosque invisível', 'Elisa Monte', '9780000000187', 2020, 'FANTASY', true);
