@@ -37,6 +37,7 @@ Versões estáveis consultadas nos registries oficiais durante a implementação
 | Java LTS | 25 (validação com JDK 25.0.4.1) |
 | Spring Boot / Spring Framework | 4.1.1 / 7, gerenciado pelo Boot |
 | Maven / Maven Wrapper | 3.10.0 / 3.3.4 |
+| Lombok | 1.18.48 (somente compilação) |
 | PostgreSQL | 18.3 |
 | Flyway / Hibernate / JUnit / Mockito / AssertJ | Gerenciados pelo BOM Spring Boot 4.1.1 |
 | springdoc OpenAPI | 3.1.1 |
@@ -196,6 +197,7 @@ OpenAPI JSON: `http://localhost:8080/v3/api-docs`.
 
 - **Java 25 LTS** oferece uma base com suporte prolongado. Records simplificam DTOs; `var` e `Optional` são usados onde tornam o código mais claro, sem recursos preview.
 - **Spring Boot 4 / Spring Framework 7** integra HTTP, validação, transações, JPA e Problem Details com configuração pequena e um BOM coerente. Não há infraestrutura distribuída sem necessidade.
+- **Lombok** reduz os getters e o construtor JPA da entidade, os construtores de injeção e a declaração do logger. O annotation processor é configurado explicitamente para Java 25 e a dependência fica fora do JAR executável. DTOs continuam sendo records; a entidade não usa `@Data`, setters genéricos nem `equals`/`hashCode` gerados.
 - **PostgreSQL 18** oferece constraints, transações e tipos reais de produção. Flyway torna a criação do schema reproduzível; Testcontainers testa a mesma tecnologia, evitando diferenças mascaradas por H2.
 - **React 19 + JavaScript** permite componentes funcionais e hooks, atendendo à escolha explícita de JavaScript. Vite mantém o fluxo de desenvolvimento e build rápido; React Router resolve as poucas rotas necessárias.
 - **TanStack Query** cuida dos dados do servidor sem Redux. **React Hook Form + Zod** oferece validação e normalização do formulário com pouco código; o backend valida novamente.
@@ -206,6 +208,7 @@ OpenAPI JSON: `http://localhost:8080/v3/api-docs`.
 - POC de usuário único, sem autenticação, autorização ou upload de capas. Não há integração externa.
 - ISBN identifica uma edição única; `available` registra disponibilidade, sem gestão de exemplares/empréstimos.
 - Atualizações usam last-write-wins; não há versionamento otimista nesta POC.
+- Lombok 1.18.48 emite um aviso de depreciação pelo uso interno de `sun.misc.Unsafe` durante a compilação com Java 25. A compilação e os testes passam; o Lombok não está presente no JAR executável. Não foi adicionada uma opção para ocultar esse aviso.
 - Busca por substring foi escolhida para uma coleção pequena; não há índice/trigram nem mecanismo de busca adicional.
 - Backend e frontend compartilham o contrato documentado no OpenAPI; não há geração de cliente nem checagem estática TypeScript.
 - O volume PostgreSQL pertence ao Docker; processos e volumes não devem ser presumidos disponíveis numa nova máquina cloud. Recrie os serviços conforme as instruções do ambiente. Restauração em uma nova tarefa não foi validada.

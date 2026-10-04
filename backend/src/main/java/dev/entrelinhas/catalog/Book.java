@@ -1,10 +1,15 @@
 package dev.entrelinhas.catalog;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 @Entity
 @Table(name = "books")
+@Getter(AccessLevel.PACKAGE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,8 +24,6 @@ class Book {
     @Column(updatable = false)
     private Instant createdAt;
 
-    protected Book() {}
-
     Book(BookRequest request) {
         update(request);
         createdAt = Instant.now();
@@ -34,13 +37,4 @@ class Book {
         genre = request.genre();
         available = request.available();
     }
-
-    Long getId() { return id; }
-    String getTitle() { return title; }
-    String getAuthor() { return author; }
-    String getIsbn() { return isbn; }
-    int getPublicationYear() { return publicationYear; }
-    Genre getGenre() { return genre; }
-    boolean isAvailable() { return available; }
-    Instant getCreatedAt() { return createdAt; }
 }

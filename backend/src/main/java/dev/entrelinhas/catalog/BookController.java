@@ -1,6 +1,8 @@
 package dev.entrelinhas.catalog;
 
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.http.ResponseEntity;
@@ -9,10 +11,9 @@ import java.net.URI;
 
 @RestController
 @RequestMapping("/api/books")
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class BookController {
     private final BookService service;
-
-    BookController(BookService service) { this.service = service; }
 
     @GetMapping
     @Operation(summary = "Lista livros; buscas parciais sem distinção de maiúsculas combinadas com AND")

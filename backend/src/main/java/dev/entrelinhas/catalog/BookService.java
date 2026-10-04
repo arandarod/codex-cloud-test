@@ -1,5 +1,7 @@
 package dev.entrelinhas.catalog;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -12,11 +14,10 @@ import java.util.Set;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class BookService {
     private static final Set<String> SORT_FIELDS = Set.of("title", "author", "publicationYear", "createdAt");
     private final BookRepository repository;
-
-    BookService(BookRepository repository) { this.repository = repository; }
 
     BookPage list(String title, String author, Genre genre, int page, int size, String sort, String direction) {
         if (!SORT_FIELDS.contains(sort) || !(direction.equals("asc") || direction.equals("desc"))) {

@@ -1,15 +1,16 @@
 package dev.entrelinhas.catalog;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import org.slf4j.LoggerFactory;
 import java.util.LinkedHashMap;
 
 @RestControllerAdvice
+@Slf4j
 class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
@@ -30,7 +31,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ProblemDetail unexpected(Exception ex) {
-        LoggerFactory.getLogger(ApiExceptionHandler.class).error("Unexpected API failure", ex);
+        log.error("Unexpected API failure", ex);
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Não foi possível concluir a operação. Tente novamente mais tarde.");
     }
